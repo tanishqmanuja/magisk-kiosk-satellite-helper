@@ -4,4 +4,4 @@ version=v1.0.0
 versionCode=10000
 author=tanishqmanuja
 description=Grant all Kiosk Satellite permissions on boot and enable silent updates via root — no Shizuku needed. See README for details.
-updateJson=https://raw.githubusercontent.com/tanishqmanuja/kiosk-satellite-helper/main/update.json
+updateJson=https://raw.githubusercontent.com/tanishqmanuja/magisk-kiosk-satellite-helper/main/update.json

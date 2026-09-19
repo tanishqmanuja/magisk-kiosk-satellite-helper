@@ -5,7 +5,7 @@
   "description": "Magisk module to auto-start Kiosk Satellite update helper",
   "repository": {
     "type": "git",
-    "url": "https://github.com/tanishqmanuja/kiosk-satellite-helper.git"
+    "url": "https://github.com/tanishqmanuja/magisk-kiosk-satellite-helper.git"
   },
   "type": "module",
   "scripts": {
