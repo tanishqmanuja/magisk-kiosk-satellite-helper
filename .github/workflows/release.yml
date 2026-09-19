@@ -62,7 +62,7 @@ jobs:
             echo "No version change detected"
           else
             git commit -m "chore(release): ${TAG} [skip ci]"
-            git tag "$TAG"
+            git tag -a "$TAG" -m "$TAG"
             git push --follow-tags
             echo "Pushed $TAG"
           fi
@@ -73,7 +73,15 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          bunx changelogithub --fromLatestTag || bunx changelogithub@latest || npx changelogithub
+          # Wait for tag to be visible on remote (annotated tag push can lag)
+          sleep 5
+          bunx changelogithub || echo "changelogithub skipped — will create release via gh"
+          # Fallback: ensure release exists via gh
+          if ! gh release view "$TAG" --json tagName >/dev/null 2>&1; then
+            NOTES=$(awk "/^## ${TAG}/{flag=1;next} /^## v/{if(flag) exit} flag" CHANGELOG.md)
+            [ -z "$NOTES" ] && NOTES=$(sed -n "1,200p" CHANGELOG.md)
+            gh release create "$TAG" --title "$TAG" --notes "$NOTES" --target main || true
+          fi
           echo "changelogithub done"
 
       - name: Upload zip to GitHub Release
