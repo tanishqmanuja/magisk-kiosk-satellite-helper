@@ -1,0 +1,4 @@
+node_modules/
+kiosk-satellite-helper-*.zip
+*.log
+.DS_Store

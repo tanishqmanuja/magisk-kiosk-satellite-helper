@@ -1,0 +1,95 @@
+name: Release
+
+permissions:
+  contents: write
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: 'Version bump (auto uses conventional commits)'
+        type: choice
+        default: auto
+        options: [auto, patch, minor, major]
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Bump version (auto from conventional commits)
+        run: |
+          BUMP="${{ inputs.bump }}"
+          if [ "$BUMP" = "auto" ]; then
+            echo "Auto bump via changelogen"
+            bunx changelogen --bump
+          else
+            echo "Explicit bump: $BUMP"
+            bunx changelogen --${BUMP}
+          fi
+          cat package.json | grep '"version"'
+          bun run sync-version
+          cat module.prop
+          cat CHANGELOG.md | head -n 50
+
+      - name: Build module zip (transparent)
+        run: |
+          bun run build
+          ls -lh kiosk-satellite-helper-*.zip
+          sha256sum kiosk-satellite-helper-*.zip || shasum -a 256 kiosk-satellite-helper-*.zip
+
+      - name: Commit version + changelog + module.prop + update.json
+        run: |
+          VER=$(bun -e "console.log(require('./package.json').version)")
+          TAG="v${VER#v}"
+          git add package.json CHANGELOG.md module.prop update.json
+          if git diff --cached --quiet; then
+            echo "No version change detected"
+          else
+            git commit -m "chore(release): ${TAG} [skip ci]"
+            git tag "$TAG"
+            git push --follow-tags
+            echo "Pushed $TAG"
+          fi
+          echo "TAG=$TAG" >> $GITHUB_ENV
+          echo "VERSION=$VER" >> $GITHUB_ENV
+
+      - name: Generate GitHub release notes via bunx changelogithub
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          bunx changelogithub --fromLatestTag || bunx changelogithub@latest || npx changelogithub
+          echo "changelogithub done"
+
+      - name: Upload zip to GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ env.TAG }}
+        run: |
+          if [ -z "$TAG" ]; then TAG=$(bun -e "console.log(require('./package.json').version)"); TAG="v${TAG#v}"; fi
+          ZIP=$(ls kiosk-satellite-helper-*.zip | head -n1)
+          echo "Uploading $ZIP to $TAG"
+          gh release upload "$TAG" "$ZIP" --clobber
+          gh release view "$TAG" --json url,tagName | cat
+
+      - name: Print summary
+        run: |
+          echo "### Release ${{ env.TAG }} built :rocket:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Zip: $(ls kiosk-satellite-helper-*.zip)" >> $GITHUB_STEP_SUMMARY
+          sha256sum kiosk-satellite-helper-*.zip >> $GITHUB_STEP_SUMMARY || true

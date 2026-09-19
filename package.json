@@ -1,0 +1,15 @@
+{
+  "name": "kiosk-satellite-helper",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Magisk module to auto-start Kiosk Satellite update helper",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tanishqmanuja/kiosk-satellite-helper.git"
+  },
+  "type": "module",
+  "scripts": {
+    "sync-version": "bun scripts/sync-version.mjs",
+    "build": "bun scripts/build.mjs"
+  }
+}

@@ -1,0 +1,4 @@
+*.sh text eol=lf
+system/bin/* text eol=lf
+META-INF/** text eol=lf
+*.prop text eol=lf
