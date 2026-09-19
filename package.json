@@ -11,5 +11,9 @@
   "scripts": {
     "sync-version": "bun scripts/sync-version.mjs",
     "build": "bun scripts/build.mjs"
+  },
+  "changelogithub": {
+    "contributors": true,
+    "contributorAvatars": true
   }
 }
